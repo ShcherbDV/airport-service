@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -24,7 +25,7 @@ class CrewSerializer(serializers.ModelSerializer):
 
 
 class AirplaneSerializer(serializers.ModelSerializer):
-    airplane_types = serializers.SlugRelatedField(read_only=True, slug_field="name")
+    airplane_type = serializers.SlugRelatedField(read_only=True, slug_field="name")
     class Meta:
         model = Airplane
         fields = ("id", "name", "rows", "seats_in_row", "airplane_type")
@@ -45,7 +46,13 @@ class FlightSerializer(serializers.ModelSerializer):
 
 
 class FlightListSerializer(serializers.ModelSerializer):
-    airplane = serializers.SlugRelatedField(read_only=True, slug_field="name")
+    airplane = serializers.CharField(source="airplane", read_only=True)
+    tickets_available = serializers.IntegerField(read_only=True)
+    route = RouteSerializer(read_only=True)
+
+    class Meta:
+        model = Flight
+        fields = ("id", "departure_time", "arrival_time", "route", "airplane", "tickets_available")
 
 
 class FlightDetailSerializer(serializers.ModelSerializer):
