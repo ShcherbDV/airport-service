@@ -50,7 +50,7 @@ class Airplane(models.Model):
 class Flight(models.Model):
     route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name="flights")
     airplane = models.ForeignKey(
-        AirplaneType, on_delete=models.CASCADE, related_name="flights"
+        Airplane, on_delete=models.CASCADE, related_name="flights"
     )
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
