@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -25,28 +24,66 @@ class CrewSerializer(serializers.ModelSerializer):
 
 
 class AirplaneSerializer(serializers.ModelSerializer):
-    airplane_type = serializers.SlugRelatedField(read_only=True, slug_field="name")
+    airplane_type = serializers.SerializerMethodField(read_only=True)
+    airplane_type_id = serializers.PrimaryKeyRelatedField(
+        queryset=AirplaneType.objects.all(),
+        write_only=True,
+        source="airplane_type",
+        label="Airplane Type",
+    )
+
     class Meta:
         model = Airplane
-        fields = ("id", "name", "rows", "seats_in_row", "airplane_type")
+        fields = ("id", "name", "rows", "seats_in_row", "airplane_type_id", "airplane_type")
+
+    def get_airplane_type(self, obj):
+        return obj.airplane_type.name if obj.airplane_type_id else None
 
 
 class RouteSerializer(serializers.ModelSerializer):
-    source = serializers.SlugRelatedField(read_only=True, slug_field="name")
-    destination = serializers.SlugRelatedField(read_only=True, slug_field="name")
+    source = serializers.SerializerMethodField(read_only=True)
+    source_id = serializers.PrimaryKeyRelatedField(
+        queryset=Airport.objects.all(),
+        write_only=True,
+        source="source",
+        label="Source"
+    )
+    destination = serializers.SerializerMethodField(read_only=True)
+    destination_id = serializers.PrimaryKeyRelatedField(
+        queryset=Airport.objects.all(),
+        write_only=True,
+        source="destination",
+        label="Destination"
+    )
     class Meta:
         model = Route
-        fields = ("id", "source", "destination", "distance")
+        fields = ("id", "source", "source_id", "destination", "destination_id", "distance")
+
+    def get_source(self, obj):
+        return obj.source.name if obj.source_id else None
+
+    def get_destination(self, obj):
+        return obj.destination.name if obj.destination_id else None
 
 
 class FlightSerializer(serializers.ModelSerializer):
+    route_id = serializers.PrimaryKeyRelatedField(
+        queryset=Route.objects.all(),
+        source="route",
+        label="Route"
+    )
+    airplane_id = serializers.PrimaryKeyRelatedField(
+        queryset=Airplane.objects.all(),
+        source="airplane",
+        label="Airplane"
+    )
     class Meta:
         model = Flight
-        fields = ("id", "departure_time", "arrival_time", "route", "airplane")
+        fields = ("id", "departure_time", "arrival_time", "route_id", "airplane_id")
 
 
 class FlightListSerializer(serializers.ModelSerializer):
-    airplane = serializers.CharField(source="airplane", read_only=True)
+    airplane = AirplaneSerializer(read_only=True)
     tickets_available = serializers.IntegerField(read_only=True)
     route = RouteSerializer(read_only=True)
 
@@ -56,8 +93,12 @@ class FlightListSerializer(serializers.ModelSerializer):
 
 
 class FlightDetailSerializer(serializers.ModelSerializer):
-    route = RouteSerializer()
-    airplane = AirplaneSerializer()
+    route = RouteSerializer(many=False, read_only=True)
+    airplane = AirplaneSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = Flight
+        fields = ("id", "departure_time", "arrival_time", "route", "airplane")
 
 
 class TicketSerializer(serializers.ModelSerializer):
