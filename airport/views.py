@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import mixins, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -8,9 +10,18 @@ from rest_framework.viewsets import GenericViewSet
 
 from airport.models import Airport, AirplaneType, Crew, Airplane, Order, Route, Flight
 from airport.permissions import IsAdminOrIfAuthenticatedReadOnly
-from airport.serializers import AirportSerializer, AirplaneTypeSerializer, CrewSerializer, AirplaneSerializer, \
-    OrderSerializer, OrderListSerializer, RouteSerializer, FlightSerializer, FlightDetailSerializer, \
-    FlightListSerializer
+from airport.serializers import (
+    AirportSerializer,
+    AirplaneTypeSerializer,
+    CrewSerializer,
+    AirplaneSerializer,
+    OrderSerializer,
+    OrderListSerializer,
+    RouteSerializer,
+    FlightSerializer,
+    FlightDetailSerializer,
+    FlightListSerializer,
+)
 
 
 class AirportViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMixin):
@@ -19,7 +30,9 @@ class AirportViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMi
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
-class AirplaneTypeViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMixin):
+class AirplaneTypeViewSet(
+    GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMixin
+):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
@@ -49,8 +62,7 @@ class FlightViewSet(viewsets.ModelViewSet):
         .select_related("route", "airplane")
         .annotate(
             tickets_available=(
-                    F("airplane__rows") * F("airplane__seats_in_row")
-                    - Count("tickets")
+                F("airplane__rows") * F("airplane__seats_in_row") - Count("tickets")
             )
         )
     )
@@ -81,6 +93,25 @@ class FlightViewSet(viewsets.ModelViewSet):
 
         return FlightSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "route",
+                type=OpenApiTypes.INT,
+                description="Filter by route id (ex. ?route=2)",
+            ),
+            OpenApiParameter(
+                "date",
+                type=OpenApiTypes.DATE,
+                description=(
+                    "Filter by datetime of flight departure" "(ex. ?date=2025-10-23)"
+                ),
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
@@ -110,4 +141,3 @@ class OrderViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
