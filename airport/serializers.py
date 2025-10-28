@@ -2,7 +2,16 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from airport.models import AirplaneType, Airport, Airplane, Crew, Route, Flight, Ticket, Order
+from airport.models import (
+    AirplaneType,
+    Airport,
+    Airplane,
+    Crew,
+    Route,
+    Flight,
+    Ticket,
+    Order,
+)
 
 
 class AirplaneTypeSerializer(serializers.ModelSerializer):
@@ -34,7 +43,14 @@ class AirplaneSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Airplane
-        fields = ("id", "name", "rows", "seats_in_row", "airplane_type_id", "airplane_type")
+        fields = (
+            "id",
+            "name",
+            "rows",
+            "seats_in_row",
+            "airplane_type_id",
+            "airplane_type",
+        )
 
     def get_airplane_type(self, obj):
         return obj.airplane_type.name if obj.airplane_type_id else None
@@ -43,21 +59,26 @@ class AirplaneSerializer(serializers.ModelSerializer):
 class RouteSerializer(serializers.ModelSerializer):
     source = serializers.SerializerMethodField(read_only=True)
     source_id = serializers.PrimaryKeyRelatedField(
-        queryset=Airport.objects.all(),
-        write_only=True,
-        source="source",
-        label="Source"
+        queryset=Airport.objects.all(), write_only=True, source="source", label="Source"
     )
     destination = serializers.SerializerMethodField(read_only=True)
     destination_id = serializers.PrimaryKeyRelatedField(
         queryset=Airport.objects.all(),
         write_only=True,
         source="destination",
-        label="Destination"
+        label="Destination",
     )
+
     class Meta:
         model = Route
-        fields = ("id", "source", "source_id", "destination", "destination_id", "distance")
+        fields = (
+            "id",
+            "source",
+            "source_id",
+            "destination",
+            "destination_id",
+            "distance",
+        )
 
     def get_source(self, obj):
         return obj.source.name if obj.source_id else None
@@ -68,15 +89,12 @@ class RouteSerializer(serializers.ModelSerializer):
 
 class FlightSerializer(serializers.ModelSerializer):
     route_id = serializers.PrimaryKeyRelatedField(
-        queryset=Route.objects.all(),
-        source="route",
-        label="Route"
+        queryset=Route.objects.all(), source="route", label="Route"
     )
     airplane_id = serializers.PrimaryKeyRelatedField(
-        queryset=Airplane.objects.all(),
-        source="airplane",
-        label="Airplane"
+        queryset=Airplane.objects.all(), source="airplane", label="Airplane"
     )
+
     class Meta:
         model = Flight
         fields = ("id", "departure_time", "arrival_time", "route_id", "airplane_id")
@@ -89,7 +107,14 @@ class FlightListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Flight
-        fields = ("id", "departure_time", "arrival_time", "route", "airplane", "tickets_available")
+        fields = (
+            "id",
+            "departure_time",
+            "arrival_time",
+            "route",
+            "airplane",
+            "tickets_available",
+        )
 
 
 class FlightDetailSerializer(serializers.ModelSerializer):
@@ -105,10 +130,7 @@ class TicketSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         data = super(TicketSerializer, self).validate(attrs=attrs)
         Ticket.validate_ticket(
-            attrs["row"],
-            attrs["seat"],
-            attrs["flight"].airplane,
-            ValidationError
+            attrs["row"], attrs["seat"], attrs["flight"].airplane, ValidationError
         )
         return data
 
