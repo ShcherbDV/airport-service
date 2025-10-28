@@ -11,6 +11,7 @@ from airport.serializers import RouteSerializer
 ROUTE_URL = reverse("airport:route-list")
 FLIGHT_URL = reverse("airport:flight-list")
 
+
 def sample_airport(**params):
     defaults = {
         "name": "WAW",
@@ -62,45 +63,6 @@ class AuthenticatedRouteApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_filter_movies_by_actors(self):
-        actor1 = Actor.objects.create(first_name="Actor 1", last_name="Last 1")
-        actor2 = Actor.objects.create(first_name="Actor 2", last_name="Last 2")
-
-        movie1 = sample_movie(title="Movie 1")
-        movie2 = sample_movie(title="Movie 2")
-
-        movie1.actors.add(actor1)
-        movie2.actors.add(actor2)
-
-        movie3 = sample_movie(title="Movie without actors")
-
-        res = self.client.get(
-            MOVIE_URL, {"actors": f"{actor1.id},{actor2.id}"}
-        )
-
-        serializer1 = MovieListSerializer(movie1)
-        serializer2 = MovieListSerializer(movie2)
-        serializer3 = MovieListSerializer(movie3)
-
-        self.assertIn(serializer1.data, res.data)
-        self.assertIn(serializer2.data, res.data)
-        self.assertNotIn(serializer3.data, res.data)
-
-    def test_filter_movies_by_title(self):
-        movie1 = sample_movie(title="Movie")
-        movie2 = sample_movie(title="Another Movie")
-        movie3 = sample_movie(title="No match")
-
-        res = self.client.get(MOVIE_URL, {"title": "movie"})
-
-        serializer1 = MovieListSerializer(movie1)
-        serializer2 = MovieListSerializer(movie2)
-        serializer3 = MovieListSerializer(movie3)
-
-        self.assertIn(serializer1.data, res.data)
-        self.assertIn(serializer2.data, res.data)
-        self.assertNotIn(serializer3.data, res.data)
-
     def test_create_route_forbidden(self):
         airport1 = sample_airport()
         airport2 = sample_airport()
@@ -118,7 +80,9 @@ class AdminRouteApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "admin@admin.com", "testpass", is_staff=True,
+            "admin@admin.com",
+            "testpass",
+            is_staff=True,
         )
         self.client.force_authenticate(self.user)
 
